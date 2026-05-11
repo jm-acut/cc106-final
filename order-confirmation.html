@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmation - EcoBITE</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">
+        <img src="https://cdn-icons-png.flaticon.com/512/765/765613.png" alt="EcoBITE logo">
+        <h1>EcoBITE</h1>
+    </div>
+    <div class="nav-links">
+        <a href="home.html">Home</a>
+        <a id="cartLink" href="cart.html">Cart</a>
+    </div>
+    <form class="search-block" action="#" onsubmit="return false;">
+        <input type="text" placeholder="Search">
+        <button type="submit">🔍</button>
+    </form>
+</div>
+
+<div class="container">
+    <div class="confirmation-container">
+        <div class="confirmation-icon">✓</div>
+        <h1 class="confirmation-title">Order Placed Successfully!</h1>
+        <p class="confirmation-subtitle">Thank you for your order. We'll prepare your delicious eco-friendly meal.</p>
+
+        <div class="confirmation-card">
+            <div class="confirmation-row">
+                <label>Order Number:</label>
+                <strong id="orderNumber">-</strong>
+            </div>
+            <div class="confirmation-row">
+                <label>Order Date:</label>
+                <strong id="orderDate">-</strong>
+            </div>
+            <div class="confirmation-row">
+                <label>Estimated Delivery:</label>
+                <strong id="estimatedDelivery">-</strong>
+            </div>
+        </div>
+
+        <div class="confirmation-section">
+            <h3>Delivery Information</h3>
+            <div class="confirmation-card">
+                <div class="confirmation-row">
+                    <label>Name:</label>
+                    <span id="confirmName">-</span>
+                </div>
+                <div class="confirmation-row">
+                    <label>Email:</label>
+                    <span id="confirmEmail">-</span>
+                </div>
+                <div class="confirmation-row">
+                    <label>Phone:</label>
+                    <span id="confirmPhone">-</span>
+                </div>
+                <div class="confirmation-row">
+                    <label>Address:</label>
+                    <span id="confirmAddress" style="white-space: pre-wrap;">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="confirmation-section">
+            <h3>Order Details</h3>
+            <div id="confirmationItems" class="confirmation-items"></div>
+            <div class="order-total" style="margin-top: 20px;">
+                <h3>Total Amount: ₱<span id="confirmTotal">0.00</span></h3>
+                <p style="font-size: 14px; color: #a86c70; margin-top: 8px;" id="paymentMethodDisplay">Payment: Cash on Delivery</p>
+            </div>
+        </div>
+
+        <div class="confirmation-actions">
+            <a href="home.html" class="add-btn" style="text-decoration: none; text-align: center; display: inline-block;">Continue Shopping</a>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        const orderData = JSON.parse(localStorage.getItem('currentOrder'));
+        if (!orderData) {
+            document.querySelector('.confirmation-container').innerHTML = '<p>Order not found. <a href="home.html">Go Home</a></p>';
+            return;
+        }
+
+        document.querySelector('.confirmation-title').innerText = 'Thank you for your order!';
+        document.querySelector('.confirmation-subtitle').innerText = 'Your eco-friendly meal is being prepared and will be delivered soon.';
+        document.getElementById('orderNumber').innerText = orderData.orderNumber;
+        document.getElementById('orderDate').innerText = new Date(orderData.orderDate).toLocaleDateString();
+        document.getElementById('estimatedDelivery').innerText = orderData.estimatedDelivery;
+
+        document.getElementById('confirmName').innerText = orderData.name;
+        document.getElementById('confirmEmail').innerText = orderData.email;
+        document.getElementById('confirmPhone').innerText = orderData.phone;
+        document.getElementById('confirmAddress').innerText = orderData.address;
+
+        const confirmationItems = document.getElementById('confirmationItems');
+        confirmationItems.innerHTML = '';
+        let total = 0;
+
+        orderData.items.forEach(item => {
+            const subtotal = item.price * item.quantity;
+            total += subtotal;
+
+            const itemElement = document.createElement('div');
+            itemElement.className = 'confirmation-item';
+            itemElement.innerHTML = `
+                <div>
+                    <h4>${item.name}</h4>
+                    <p>${item.quantity} × ₱${item.price.toFixed(2)} = ₱${subtotal.toFixed(2)}</p>
+                </div>
+            `;
+            confirmationItems.appendChild(itemElement);
+        });
+
+        document.getElementById('confirmTotal').innerText = total.toFixed(2);
+        const paymentMethods = {
+            'cod': 'Cash on Delivery',
+            'card': 'Credit/Debit Card',
+            'gcash': 'GCash'
+        };
+        document.getElementById('paymentMethodDisplay').innerText = `Payment: ${paymentMethods[orderData.paymentMethod] || 'Cash on Delivery'}`;
+    });
+</script>
+</body>
+</html>

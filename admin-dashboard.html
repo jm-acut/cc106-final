@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoBITE Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="admin-navbar">
+    <div class="logo">
+        <img src="https://cdn-icons-png.flaticon.com/512/765/765613.png" alt="EcoBITE logo">
+        <h1>EcoBITE Admin</h1>
+    </div>
+    <div class="nav-links">
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-products.html">Products</a>
+        <a href="admin-orders.html">Orders</a>
+        <a href="#" onclick="adminLogout()">Logout</a>
+    </div>
+</div>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, Administrator</p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-number" id="totalOrders">0</div>
+            <div class="stat-label">Total Orders</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalProducts">0</div>
+            <div class="stat-label">Total Products</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">₱<span id="totalRevenue">0.00</span></div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="pendingOrders">0</div>
+            <div class="stat-label">Pending Orders</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Recent Orders</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Total Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="recentOrdersTable">
+                <tr>
+                    <td colspan="6">No orders yet</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Quick Actions</h2>
+        <div class="action-buttons">
+            <a href="admin-products.html" class="add-btn">Manage Products</a>
+            <a href="admin-orders.html" class="add-btn">View All Orders</a>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', function(){
+        checkAdminAccess();
+        loadDashboardData();
+    });
+
+    function checkAdminAccess(){
+        const isAdmin = localStorage.getItem('isAdminLoggedIn');
+        if(!isAdmin){
+            window.location.href = 'admin-login.html';
+        }
+    }
+
+    function loadDashboardData(){
+        const orders = JSON.parse(localStorage.getItem('ecoBiteOrders')) || [];
+        const products = JSON.parse(localStorage.getItem('ecoBiteProducts')) || getDefaultProducts();
+
+        document.getElementById('totalOrders').innerText = orders.length;
+        document.getElementById('totalProducts').innerText = products.length;
+        document.getElementById('pendingOrders').innerText = orders.length;
+
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        document.getElementById('totalRevenue').innerText = totalRevenue.toFixed(2);
+
+        displayRecentOrders(orders);
+    }
+
+    function displayRecentOrders(orders){
+        const tbody = document.getElementById('recentOrdersTable');
+        tbody.innerHTML = '';
+
+        if(orders.length === 0){
+            tbody.innerHTML = '<tr><td colspan="6">No orders yet</td></tr>';
+            return;
+        }
+
+        orders.slice(-5).reverse().forEach(order => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${order.orderNumber}</td>
+                <td>${order.name}</td>
+                <td>₱${order.total.toFixed(2)}</td>
+                <td>${new Date(order.orderDate).toLocaleDateString()}</td>
+                <td><span class="status-badge">Pending</span></td>
+                <td><a href="#" class="view-link" onclick="viewOrderDetails('${order.orderNumber}')">View</a></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function viewOrderDetails(orderNumber){
+        alert('View details for order: ' + orderNumber);
+    }
+
+    function adminLogout(){
+        localStorage.removeItem('isAdminLoggedIn');
+        window.location.href = 'admin-login.html';
+    }
+
+    function getDefaultProducts(){
+        return [
+            { id: 'product1', name: 'Salad with Avocado and Sesame Seeds', price: 420, quantity: 50 },
+            { id: 'product2', name: 'Salad in the Bowl', price: 390, quantity: 45 },
+            { id: 'product3', name: 'Cooked Food On A Plate', price: 390, quantity: 30 },
+            { id: 'product4', name: 'Salad in the Bowl', price: 190, quantity: 60 }
+        ];
+    }
+</script>
+</body>
+</html>

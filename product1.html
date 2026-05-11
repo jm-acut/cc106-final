@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product 1</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">
+        <img src="https://cdn-icons-png.flaticon.com/512/765/765613.png" alt="EcoBITE logo">
+        <h1>EcoBITE</h1>
+    </div>
+    <div class="nav-links">
+        <a href="home.html">Home</a>
+        <a id="cartLink" href="cart.html">Cart</a>
+    </div>
+    <form class="search-block" action="#" onsubmit="return false;">
+        <input type="text" placeholder="Search">
+        <button type="submit">🔍</button>
+    </form>
+</div>
+
+<div class="product-container">
+    <img class="product-image" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c" alt="Salad with Avocado and Sesame Seeds">
+    <div class="product-details" data-product-id="product1" data-product-name="Salad with Avocado and Sesame Seeds" data-product-price="420" data-product-image="https://images.unsplash.com/photo-1546069901-ba9599a7e63c">
+        <div class="product-title">Salad with Avocado and Sesame Seeds</div>
+        <div class="price">₱420</div>
+        <div class="description">A creamy avocado salad with sesame seeds, fresh greens, and a light dressing.</div>
+        <div class="quantity">
+            <button onclick="decrease()">−</button>
+            <span id="count">1</span>
+            <button onclick="increase()">+</button>
+        </div>
+        <button class="add-btn" onclick="addToCart()">Add to cart</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>

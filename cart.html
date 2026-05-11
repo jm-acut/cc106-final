@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoBITE Cart</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">
+        <img src="https://cdn-icons-png.flaticon.com/512/765/765613.png" alt="EcoBITE logo">
+        <h1>EcoBITE</h1>
+    </div>
+    <div class="nav-links">
+        <a href="home.html">Home</a>
+        <a id="cartLink" href="cart.html">Cart</a>
+    </div>
+    <form class="search-block" action="#" onsubmit="return false;">
+        <input type="text" placeholder="Search">
+        <button type="submit">🔍</button>
+    </form>
+</div>
+
+<div class="container cart-container">
+    <div class="title">Your Cart</div>
+    <div id="cartItems"></div>
+    <div class="cart-summary">
+        <div>Total: ₱<span id="cartTotal">0.00</span></div>
+        <div style="display: flex; gap: 10px;">
+            <button class="add-btn" onclick="goToCheckout()" id="checkoutBtn">Proceed to Checkout</button>
+            <button class="remove-btn" onclick="clearCart()">Clear Cart</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

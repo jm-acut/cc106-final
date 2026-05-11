@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoBITE Admin - Orders</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="admin-navbar">
+    <div class="logo">
+        <img src="https://cdn-icons-png.flaticon.com/512/765/765613.png" alt="EcoBITE logo">
+        <h1>EcoBITE Admin</h1>
+    </div>
+    <div class="nav-links">
+        <a href="admin-dashboard.html">Dashboard</a>
+        <a href="admin-products.html">Products</a>
+        <a href="admin-orders.html">Orders</a>
+        <a href="#" onclick="adminLogout()">Logout</a>
+    </div>
+</div>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Order Management</h1>
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterOrders('all', event)">All Orders</button>
+            <button class="filter-btn" onclick="filterOrders('pending', event)">Pending</button>
+            <button class="filter-btn" onclick="filterOrders('completed', event)">Completed</button>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Total Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTable">
+                <tr>
+                    <td colspan="8">Loading orders...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div id="orderModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+        <span class="close" onclick="closeOrderModal()">&times;</span>
+        <h2>Order Details</h2>
+        
+        <div class="order-details-section">
+            <h3>Order Information</h3>
+            <div class="form-group">
+                <label>Order Number:</label>
+                <span id="detailOrderNum">-</span>
+            </div>
+            <div class="form-group">
+                <label>Order Date:</label>
+                <span id="detailOrderDate">-</span>
+            </div>
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="detailOrderStatus">
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="order-details-section">
+            <h3>Customer Information</h3>
+            <div class="form-group">
+                <label>Name:</label>
+                <span id="detailCustomerName">-</span>
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <span id="detailCustomerEmail">-</span>
+            </div>
+            <div class="form-group">
+                <label>Phone:</label>
+                <span id="detailCustomerPhone">-</span>
+            </div>
+            <div class="form-group">
+                <label>Delivery Address:</label>
+                <span id="detailCustomerAddress" style="white-space: pre-wrap;">-</span>
+            </div>
+        </div>
+
+        <div class="order-details-section">
+            <h3>Order Items</h3>
+            <div id="detailOrderItems"></div>
+        </div>
+
+        <div class="order-details-section">
+            <h3>Order Summary</h3>
+            <div class="form-group">
+                <label>Total Amount:</label>
+                <span id="detailOrderTotal">₱0.00</span>
+            </div>
+            <div class="form-group">
+                <label>Payment Method:</label>
+                <span id="detailPaymentMethod">-</span>
+            </div>
+        </div>
+
+        <button class="add-btn" onclick="updateOrderStatus()" style="width: 100%; margin-top: 20px;">Update Status</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+    let allOrders = [];
+    let currentFilter = 'all';
+
+    window.addEventListener('DOMContentLoaded', function(){
+        checkAdminAccess();
+        loadOrders();
+    });
+
+    function checkAdminAccess(){
+        const isAdmin = localStorage.getItem('isAdminLoggedIn');
+        if(!isAdmin){
+            window.location.href = 'admin-login.html';
+        }
+    }
+
+    function loadOrders(){
+        allOrders = JSON.parse(localStorage.getItem('ecoBiteOrders')) || [];
+        displayOrders();
+    }
+
+    function displayOrders(){
+        const tbody = document.getElementById('ordersTable');
+        tbody.innerHTML = '';
+
+        let filtered = allOrders;
+        if(currentFilter !== 'all'){
+            filtered = allOrders.filter(order => (order.status || 'pending') === currentFilter);
+        }
+
+        if(filtered.length === 0){
+            tbody.innerHTML = '<tr><td colspan="8">No orders found</td></tr>';
+            return;
+        }
+
+        filtered.forEach(order => {
+            const row = document.createElement('tr');
+            const status = order.status || 'pending';
+            row.innerHTML = `
+                <td>${order.orderNumber}</td>
+                <td>${order.name}</td>
+                <td>${order.email}</td>
+                <td>${order.phone}</td>
+                <td>₱${order.total.toFixed(2)}</td>
+                <td>${new Date(order.orderDate).toLocaleDateString()}</td>
+                <td><span class="status-badge ${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+                <td><button class="edit-btn" onclick="viewOrderDetails('${order.orderNumber}')">View</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function filterOrders(filter, event){
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        if(event && event.target){
+            event.target.classList.add('active');
+        }
+        displayOrders();
+    }
+
+    function viewOrderDetails(orderNumber){
+        const order = allOrders.find(o => o.orderNumber === orderNumber);
+        if(!order) return;
+
+        document.getElementById('detailOrderNum').innerText = order.orderNumber;
+        document.getElementById('detailOrderDate').innerText = new Date(order.orderDate).toLocaleDateString();
+        document.getElementById('detailOrderStatus').value = order.status || 'pending';
+        document.getElementById('detailCustomerName').innerText = order.name;
+        document.getElementById('detailCustomerEmail').innerText = order.email;
+        document.getElementById('detailCustomerPhone').innerText = order.phone;
+        document.getElementById('detailCustomerAddress').innerText = order.address;
+        document.getElementById('detailOrderTotal').innerText = '₱' + order.total.toFixed(2);
+        
+        const paymentMethods = {
+            'cod': 'Cash on Delivery',
+            'card': 'Credit/Debit Card',
+            'gcash': 'GCash'
+        };
+        document.getElementById('detailPaymentMethod').innerText = paymentMethods[order.paymentMethod] || 'Cash on Delivery';
+
+        const itemsDiv = document.getElementById('detailOrderItems');
+        itemsDiv.innerHTML = '';
+        order.items.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'confirmation-item';
+            const subtotal = item.price * item.quantity;
+            itemElement.innerHTML = `
+                <h4>${item.name}</h4>
+                <p>${item.quantity} × ₱${item.price.toFixed(2)} = ₱${subtotal.toFixed(2)}</p>
+            `;
+            itemsDiv.appendChild(itemElement);
+        });
+
+        window.currentOrderNum = orderNumber;
+        document.getElementById('orderModal').style.display = 'block';
+    }
+
+    function updateOrderStatus(){
+        const newStatus = document.getElementById('detailOrderStatus').value;
+        const order = allOrders.find(o => o.orderNumber === window.currentOrderNum);
+        
+        if(order){
+            order.status = newStatus;
+            localStorage.setItem('ecoBiteOrders', JSON.stringify(allOrders));
+            closeOrderModal();
+            displayOrders();
+            alert('Order status updated successfully!');
+        }
+    }
+
+    function closeOrderModal(){
+        document.getElementById('orderModal').style.display = 'none';
+    }
+
+    function adminLogout(){
+        localStorage.removeItem('isAdminLoggedIn');
+        window.location.href = 'admin-login.html';
+    }
+</script>
+</body>
+</html>
