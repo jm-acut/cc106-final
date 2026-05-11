@@ -1,152 +1,57 @@
-// Configuration
-const API_URL = 'http://localhost:5000/api'; // Change to deployed URL in production
-const SESSION_TOKEN_KEY = 'ecobite_token';
-const SESSION_USER_ID_KEY = 'ecobite_userId';
-const SESSION_EMAIL_KEY = 'ecobite_email';
 let productCount = 1;
 
-// Utility Functions
-function getSessionToken() {
-    return localStorage.getItem(SESSION_TOKEN_KEY);
+function saveUser(email, password) {
+    localStorage.setItem(email, password);
 }
 
-function setSessionToken(token) {
-    localStorage.setItem(SESSION_TOKEN_KEY, token);
-}
-
-function getUserId() {
-    return localStorage.getItem(SESSION_USER_ID_KEY);
-}
-
-function setUserId(userId) {
-    localStorage.setItem(SESSION_USER_ID_KEY, userId);
-}
-
-function getUserEmail() {
-    return localStorage.getItem(SESSION_EMAIL_KEY);
-}
-
-function setUserEmail(email) {
-    localStorage.setItem(SESSION_EMAIL_KEY, email);
-}
-
-function clearSession() {
-    localStorage.removeItem(SESSION_TOKEN_KEY);
-    localStorage.removeItem(SESSION_USER_ID_KEY);
-    localStorage.removeItem(SESSION_EMAIL_KEY);
-}
-
-function getAuthHeaders() {
-    const token = getSessionToken();
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
-    };
-}
-
-// API Call Helper
-async function apiCall(endpoint, method = 'GET', data = null) {
-    const url = `${API_URL}${endpoint}`;
-    const options = {
-        method: method,
-        headers: getAuthHeaders()
-    };
-
-    if (data) {
-        options.body = JSON.stringify(data);
-    }
-
-    try {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'API request failed');
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(`API Error [${method} ${endpoint}]:`, error);
-        throw error;
-    }
-}
-
-// User Functions
-async function login() {
-    const email = document.getElementById("loginEmail")?.value.trim() || "";
-    const password = document.getElementById("loginPassword")?.value || "";
+function login() {
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
     const message = document.getElementById("message");
 
-    if (!message) {
-        alert("Unable to show login message.");
-        return;
-    }
+    const savedPassword = localStorage.getItem(email);
 
-    if (!email || !password) {
-        message.style.color = "red";
-        message.innerText = "Please enter both email and password.";
-        return;
-    }
-
-    try {
-        const response = await apiCall('/users/login', 'POST', { email, password });
-        
+    if (savedPassword === password) {
         message.style.color = "green";
-        message.innerText = "Login successful! Redirecting...";
-        
-        // Save session
-        setSessionToken(response.token);
-        setUserId(response.userId);
-        setUserEmail(response.email);
-        
+        message.innerText = "Login successful";
+
+        localStorage.setItem("loggedInUser", email);
+
         setTimeout(() => {
             window.location.href = "home.html";
-        }, 800);
-    } catch (error) {
+        }, 1000);
+    } else {
         message.style.color = "red";
-        message.innerText = error.message || "Invalid email or password. Please try again.";
+        message.innerText = "Invalid email or password";
     }
 }
 
-async function createAccount() {
-    const email = document.getElementById("email")?.value.trim() || "";
-    const password = document.getElementById("password")?.value || "";
-    const confirmPassword = document.getElementById("confirmPassword")?.value || "";
+function createAccount() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
     const message = document.getElementById("message");
-
-    if (!message) {
-        alert("Unable to show account creation message.");
-        return;
-    }
 
     if (!email || !password || !confirmPassword) {
         message.style.color = "red";
-        message.innerText = "Please fill in all fields.";
+        message.innerText = "Please fill all fields";
         return;
     }
 
     if (password !== confirmPassword) {
         message.style.color = "red";
-        message.innerText = "Passwords do not match.";
+        message.innerText = "Passwords do not match";
         return;
     }
 
-    try {
-        const response = await apiCall('/users/register', 'POST', { email, password });
-        
-        message.style.color = "green";
-        message.innerText = "Account created successfully! Redirecting to login...";
-        
-        // Save session
-        setSessionToken(response.token);
-        setUserId(response.userId);
-        setUserEmail(response.email);
-        
-        setTimeout(() => {
-            window.location.href = "index.html";
-        }, 1000);
-    } catch (error) {
-        message.style.color = "red";
-        message.innerText = error.message || "Failed to create account. Please try again.";
-    }
+    saveUser(email, password);
+
+    message.style.color = "green";
+    message.innerText = "Account created successfully";
+
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 1000);
 }
 
 function goToCreate() {
@@ -157,216 +62,175 @@ function goToLogin() {
     window.location.href = "index.html";
 }
 
-function logout() {
-    clearSession();
-    window.location.href = "index.html";
+function increase() {
+    productCount++;
+    document.getElementById("count").innerText = productCount;
 }
 
-// Cart Functions
-async function getCart() {
-    const userId = getUserId();
-    if (!userId) return [];
-    
-    try {
-        const response = await apiCall(`/carts/${userId}`, 'GET');
-        return response.items || [];
-    } catch (error) {
-        console.error('Failed to fetch cart:', error);
-        return [];
+function decrease() {
+    if (productCount > 1) {
+        productCount--;
+        document.getElementById("count").innerText = productCount;
     }
 }
 
-async function updateCartBadge() {
-    const cartLink = document.getElementById("cartLink");
-    if (!cartLink) return;
-    
-    const cart = await getCart();
-    const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
-    cartLink.textContent = `Cart${totalQty > 0 ? ` (${totalQty})` : ``}`;
-}
-
-function updateCount(){
-    const countElement = document.getElementById("count");
-    if(countElement){
-        countElement.innerText = productCount;
-    }
-}
-
-function increase(){
-    productCount += 1;
-    updateCount();
-}
-
-function decrease(){
-    if(productCount > 1){
-        productCount -= 1;
-        updateCount();
-    }
-}
-
-async function addToCart() {
-    const userId = getUserId();
-    if (!userId) {
-        alert("Please login first");
-        window.location.href = "index.html";
-        return;
-    }
-
+function addToCart() {
     const details = document.querySelector(".product-details");
-    if (!details) {
-        alert("Unable to add this item to cart.");
-        return;
+
+    const product = {
+        id: details.dataset.productId,
+        name: details.dataset.productName,
+        price: parseFloat(details.dataset.productPrice),
+        image: details.dataset.productImage,
+        quantity: productCount
+    };
+
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    const existing = cart.find(item => item.id === product.id);
+
+    if (existing) {
+        existing.quantity += product.quantity;
+    } else {
+        cart.push(product);
     }
 
-    const name = details.dataset.productName || document.querySelector(".product-title")?.innerText || "Product";
-    const price = parseFloat(details.dataset.productPrice || document.querySelector(".price")?.innerText.replace(/[^0-9.]/g, "")) || 0;
-    const image = details.dataset.productImage || document.querySelector(".product-image")?.src || "";
-    const productId = details.dataset.productId || name;
+    localStorage.setItem("cart", JSON.stringify(cart));
 
-    try {
-        await apiCall(`/carts/${userId}/items`, 'POST', {
-            productId,
-            name,
-            price,
-            quantity: productCount,
-            image
-        });
-
-        alert(`Added ${productCount} item(s) to cart`);
-        productCount = 1;
-        updateCount();
-        updateCartBadge();
-    } catch (error) {
-        alert("Failed to add item to cart: " + error.message);
-    }
+    alert("Added to cart");
 }
 
-async function displayCartItems() {
+function displayCartItems() {
     const cartItems = document.getElementById("cartItems");
     const totalPrice = document.getElementById("cartTotal");
+
     if (!cartItems || !totalPrice) return;
 
-    const cart = await getCart();
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
     cartItems.innerHTML = "";
 
+    let total = 0;
+
     if (cart.length === 0) {
-        cartItems.innerHTML = "<p>Your cart is empty.</p>";
+        cartItems.innerHTML = "<p>Your cart is empty</p>";
         totalPrice.innerText = "0.00";
         return;
     }
 
-    let total = 0;
-
     cart.forEach(item => {
-        const subtotal = item.price * item.quantity;
-        total += subtotal;
+        total += item.price * item.quantity;
 
-        const itemElement = document.createElement("div");
-        itemElement.className = "cart-item";
-        itemElement.innerHTML = `
-            <img src="${item.image}" alt="${item.name}">
+        const div = document.createElement("div");
+
+        div.className = "cart-item";
+
+        div.innerHTML = `
+            <img src="${item.image}">
             <div class="cart-info">
                 <h3>${item.name}</h3>
-                <p>Price: ₱${item.price.toFixed(2)}</p>
-                <p>Qty: ${item.quantity}</p>
-                <p>Subtotal: ₱${subtotal.toFixed(2)}</p>
+                <p>₱${item.price}</p>
+                <p>Quantity: ${item.quantity}</p>
             </div>
-            <button class="remove-btn" onclick="removeFromCart('${item.productId}')">Remove</button>
+
+            <button class="remove-btn" onclick="removeFromCart('${item.id}')">
+                Remove
+            </button>
         `;
-        cartItems.appendChild(itemElement);
+
+        cartItems.appendChild(div);
     });
 
     totalPrice.innerText = total.toFixed(2);
 }
 
-async function removeFromCart(productId) {
-    const userId = getUserId();
-    if (!userId) return;
+function removeFromCart(id) {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    try {
-        await apiCall(`/carts/${userId}/items/${productId}`, 'DELETE');
-        updateCartBadge();
-        displayCartItems();
-    } catch (error) {
-        alert("Failed to remove item from cart: " + error.message);
-    }
+    cart = cart.filter(item => item.id !== id);
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+
+    displayCartItems();
 }
 
-async function clearCart() {
-    const userId = getUserId();
-    if (!userId) return;
-
-    try {
-        await apiCall(`/carts/${userId}`, 'DELETE');
-        updateCartBadge();
-        displayCartItems();
-    } catch (error) {
-        alert("Failed to clear cart: " + error.message);
-    }
+function clearCart() {
+    localStorage.removeItem("cart");
+    displayCartItems();
 }
 
 function goToCheckout() {
-    const userId = getUserId();
-    if (!userId) {
-        alert("Please login first");
-        window.location.href = "index.html";
-        return;
-    }
     window.location.href = "checkout.html";
 }
 
-async function placeOrder() {
-    const userId = getUserId();
-    if (!userId) {
-        alert("Please login first");
-        window.location.href = "index.html";
+function placeOrder() {
+    const fullName = document.getElementById("fullName").value;
+    const email = document.getElementById("emailAddress").value;
+    const phone = document.getElementById("phoneNumber").value;
+    const address = document.getElementById("deliveryAddress").value;
+
+    if (!fullName || !email || !phone || !address) {
+        alert("Please fill all fields");
         return;
     }
 
-    const fullName = document.getElementById("fullName")?.value || "";
-    const emailAddress = document.getElementById("emailAddress")?.value || "";
-    const phoneNumber = document.getElementById("phoneNumber")?.value || "";
-    const deliveryAddress = document.getElementById("deliveryAddress")?.value || "";
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "cod";
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    if (!fullName || !emailAddress || !phoneNumber || !deliveryAddress) {
-        alert("Please fill in all required fields");
-        return;
-    }
+    let total = 0;
 
-    const cart = await getCart();
-    if (cart.length === 0) {
-        alert("Your cart is empty");
-        return;
-    }
+    cart.forEach(item => {
+        total += item.price * item.quantity;
+    });
 
-    try {
-        const response = await apiCall('/orders', 'POST', {
-            userId,
-            name: fullName,
-            email: emailAddress,
-            phone: phoneNumber,
-            address: deliveryAddress,
-            paymentMethod,
-            items: cart,
-            total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-        });
+    const order = {
+        name: fullName,
+        email: email,
+        phone: phone,
+        address: address,
+        items: cart,
+        total: total,
+        orderNumber: "ECO" + Date.now()
+    };
 
-        // Store order number in session storage for confirmation page
-        sessionStorage.setItem('currentOrderNumber', response.orderNumber);
+    localStorage.setItem("currentOrder", JSON.stringify(order));
 
-        // Clear cart
-        await clearCart();
+    localStorage.removeItem("cart");
 
-        window.location.href = "order-confirmation.html";
-    } catch (error) {
-        alert("Failed to place order: " + error.message);
-    }
+    window.location.href = "order-confirmation.html";
 }
 
-// Initialize on page load
-window.addEventListener("DOMContentLoaded", async function() {
-    updateCount();
-    await updateCartBadge();
-    await displayCartItems();
+function displayOrderConfirmation() {
+    const order = JSON.parse(localStorage.getItem("currentOrder"));
+
+    if (!order) return;
+
+    document.getElementById("orderNumber").innerText = order.orderNumber;
+    document.getElementById("confirmName").innerText = order.name;
+    document.getElementById("confirmEmail").innerText = order.email;
+    document.getElementById("confirmPhone").innerText = order.phone;
+    document.getElementById("confirmAddress").innerText = order.address;
+    document.getElementById("confirmTotal").innerText = order.total.toFixed(2);
+
+    const container = document.getElementById("confirmationItems");
+
+    order.items.forEach(item => {
+        const div = document.createElement("div");
+
+        div.className = "confirmation-item";
+
+        div.innerHTML = `
+            <h4>${item.name}</h4>
+            <p>₱${item.price} × ${item.quantity}</p>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    displayCartItems();
+
+    displayOrderConfirmation();
+
 });
